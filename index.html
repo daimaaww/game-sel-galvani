@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Galvanic Cell Simulation</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .controls {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      background-color: #fff;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .electrode-selector {
+      flex: 1;
+    }
+    .cell-container {
+      position: relative;
+      height: 300px;
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .cell {
+      height: 100%;
+      position: relative;
+      display: flex;
+      justify-content: space-between;
+    }
+    .half-cell {
+      position: relative;
+      width: 40%;
+      height: 80%;
+      margin-top: 30px;
+      border: 1px solid #ccc;
+    }
+    .salt-bridge {
+      position: absolute;
+      width: 30%;
+      height: 20px;
+      background-color: #eaeaea;
+      top: 30px;
+      left: 35%;
+      border: 1px solid #999;
+      border-radius: 5px;
+      z-index: 2;
+    }
+    .electrode {
+      position: absolute;
+      width: 20px;
+      height: 180px;
+      top: 20px;
+      background-color: #666;
+      z-index: 2;
+    }
+    .left-electrode {
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    .right-electrode {
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    .solution {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      height: 200px;
+      border-radius: 0 0 5px 5px;
+      opacity: 0.5;
+    }
+    .wire {
+      position: absolute;
+      height: 2px;
+      background-color: #333;
+      top: 10px;
+      z-index: 1;
+    }
+    .left-wire {
+      width: 20%;
+      left: 10%;
+    }
+    .right-wire {
+      width: 20%;
+      right: 10%;
+    }
+    .label {
+      position: absolute;
+      font-size: 14px;
+      background-color: white;
+      padding: 2px 5px;
+      border-radius: 3px;
+      z-index: 3;
+    }
+    .info-panel {
+      background-color: #fff;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .reactions {
+      margin-bottom: 15px;
+    }
+    .voltage {
+      font-size: 24px;
+      text-align: center;
+      margin: 15px 0;
+      font-weight: bold;
+    }
+    .ion {
+      position: absolute;
+      font-size: 16px;
+      font-weight: bold;
+      z-index: 2;
+      opacity: 0;
+    }
+    .electron {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      background-color: blue;
+      border-radius: 50%;
+      z-index: 3;
+      opacity: 0;
+    }
+    .voltmeter {
+      position: absolute;
+      width: 100px;
+      height: 60px;
+      background-color: #333;
+      border-radius: 5px;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      z-index: 3;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      cursor: pointer;
+      border-radius: 5px;
+      font-size: 14px;
+      margin-top: 10px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .explanation {
+      background-color: #fff;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .voltage-chart {
+      height: 200px;
+      background-color: #fff;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      position: relative;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Galvanic Cell Interactive Simulation</h1>
+    
+    <div class="controls">
+      <div class="electrode-selector">
+        <h3>Anode (Oxidation)</h3>
+        <select id="anode-select">
+          <option value="Zn">Zinc (Zn)</option>
+          <option value="Mg">Magnesium (Mg)</option>
+          <option value="Fe">Iron (Fe)</option>
+          <option value="Pb">Lead (Pb)</option>
+          <option value="Ni">Nickel (Ni)</option>
+        </select>
+      </div>
+      
+      <div class="electrode-selector">
+        <h3>Cathode (Reduction)</h3>
+        <select id="cathode-select">
+          <option value="Cu">Copper (Cu)</option>
+          <option value="Ag">Silver (Ag)</option>
+          <option value="Fe">Iron (Fe)</option>
+          <option value="Pb">Lead (Pb)</option>
+          <option value="Ni">Nickel (Ni)</option>
+        </select>
+      </div>
+      
+      <div>
+        <h3>Actions</h3>
+        <button id="start-btn">Start Reaction</button>
+        <button id="reset-btn">Reset</button>
+      </div>
+    </div>
+    
+    <div class="cell-container">
+      <div class="cell">
+        <div class="half-cell" id="anode-cell">
+          <div class="electrode left-electrode" id="anode"></div>
+          <div class="solution" id="anode-solution"></div>
+          <div class="label" style="top: 5px; left: 10px;" id="anode-label">Anode</div>
+        </div>
+        
+        <div class="half-cell" id="cathode-cell" style="margin-left: auto;">
+          <div class="electrode right-electrode" id="cathode"></div>
+          <div class="solution" id="cathode-solution"></div>
+          <div class="label" style="top: 5px; left: 10px;" id="cathode-label">Cathode</div>
+        </div>
+        
+        <div class="salt-bridge"></div>
+        <div class="wire left-wire"></div>
+        <div class="wire right-wire"></div>
+        <div class="voltmeter" id="voltmeter">0.00 V</div>
+        
+        <!-- Labels -->
+        <div class="label" style="bottom: 5px; left: 20%;">Metal ions</div>
+        <div class="label" style="bottom: 5px; right: 20%;">Metal ions</div>
+        <div class="label" style="top: 55px; left: 47%;">Salt bridge</div>
+        <div class="label" style="top: 280px; left: 48%;">e⁻ flow</div>
+      </div>
+    </div>
+    
+    <div class="info-panel">
+      <div class="reactions">
+        <h3>Half-Reactions:</h3>
+        <p id="anode-reaction">Anode (Oxidation): Zn(s) → Zn²⁺(aq) + 2e⁻</p>
+        <p id="cathode-reaction">Cathode (Reduction): Cu²⁺(aq) + 2e⁻ → Cu(s)</p>
+        <p id="overall-reaction">Overall: Zn(s) + Cu²⁺(aq) → Zn²⁺(aq) + Cu(s)</p>
+      </div>
+      <div class="voltage">
+        Cell Potential: <span id="cell-voltage">1.10</span> V
+      </div>
+    </div>
+    
+    <div class="voltage-chart">
+      <h3>Voltage over Time</h3>
+      <canvas id="voltage-chart" width="800" height="150"></canvas>
+    </div>
+    
+    <div class="explanation">
+      <h3>How a Galvanic Cell Works</h3>
+      <p>A galvanic cell converts chemical energy into electrical energy through redox reactions:</p>
+      <ol>
+        <li><strong>Anode:</strong> Oxidation occurs here. The metal electrode loses electrons and becomes ions in solution.</li>
+        <li><strong>Cathode:</strong> Reduction occurs here. Metal ions in solution gain electrons and deposit on the electrode.</li>
+        <li><strong>Salt Bridge:</strong> Maintains electrical neutrality by allowing ions to flow between half-cells.</li>
+        <li><strong>External Circuit:</strong> Electrons flow from anode to cathode, generating electrical current.</li>
+      </ol>
+      <p>The cell voltage is determined by the difference in reduction potentials of the half-reactions.</p>
+    </div>
+  </div>
+
+  <script>
+    // Metal properties: electrode color, solution color, reduction potential
+    const metals = {
+      'Zn': { color: '#A8A9AD', solution: '#e6f7ff', potential: -0.76 },
+      'Cu': { color: '#B87333', solution: '#e6fff9', potential: 0.34 },
+      'Ag': { color: '#C0C0C0', solution: '#f2f2f2', potential: 0.80 },
+      'Mg': { color: '#ECECEC', solution: '#e6f7ff', potential: -2.37 },
+      'Fe': { color: '#71797E', solution: '#ffffe6', potential: -0.44 },
+      'Pb': { color: '#575961', solution: '#f2f2f2', potential: -0.13 },
+      'Ni': { color: '#727472', solution: '#e6ffe6', potential: -0.25 }
+    };
+
+    // Half-reaction templates
+    const reactions = {
+      'Zn': 'Zn(s) ⟶ Zn²⁺(aq) + 2e⁻',
+      'Cu': 'Cu²⁺(aq) + 2e⁻ ⟶ Cu(s)',
+      'Ag': 'Ag⁺(aq) + e⁻ ⟶ Ag(s)',
+      'Mg': 'Mg(s) ⟶ Mg²⁺(aq) + 2e⁻',
+      'Fe': 'Fe²⁺(aq) + 2e⁻ ⟶ Fe(s)',
+      'Pb': 'Pb²⁺(aq) + 2e⁻ ⟶ Pb(s)',
+      'Ni': 'Ni²⁺(aq) + 2e⁻ ⟶ Ni(s)'
+    };
+
+    // Set up DOM elements
+    const anodeSelect = document.getElementById('anode-select');
+    const cathodeSelect = document.getElementById('cathode-select');
+    const anodeElement = document.getElementById('anode');
+    const cathodeElement = document.getElementById('cathode');
+    const anodeSolution = document.getElementById('anode-solution');
+    const cathodeSolution = document.getElementById('cathode-solution');
+    const anodeReaction = document.getElementById('anode-reaction');
+    const cathodeReaction = document.getElementById('cathode-reaction');
+    const overallReaction = document.getElementById('overall-reaction');
+    const cellVoltage = document.getElementById('cell-voltage');
+    const voltmeter = document.getElementById('voltmeter');
+    const startBtn = document.getElementById('start-btn');
+    const resetBtn = document.getElementById('reset-btn');
+    const canvas = document.getElementById('voltage-chart');
+    const ctx = canvas.getContext('2d');
+    
+    let running = false;
+    let ions = [];
+    let electrons = [];
+    let voltageData = [];
+    let startTime = 0;
+    let animationId = null;
+    
+    // Initialize the cell
+    updateCell();
+    
+    // Event listeners
+    anodeSelect.addEventListener('change', updateCell);
+    cathodeSelect.addEventListener('change', updateCell);
+    startBtn.addEventListener('click', startReaction);
+    resetBtn.addEventListener('click', resetSimulation);
+    
+    // Update cell based on selected metals
+    function updateCell() {
+      const anode = anodeSelect.value;
+      const cathode = cathodeSelect.value;
+      
+      // Check if same metal selected for both electrodes
+      if (anode === cathode) {
+        alert("Please select different metals for anode and cathode.");
+        return;
+      }
+      
+      // Update electrode colors
+      anodeElement.style.backgroundColor = metals[anode].color;
+      cathodeElement.style.backgroundColor = metals[cathode].color;
+      
+      // Update solution colors
+      anodeSolution.style.backgroundColor = metals[anode].solution;
+      cathodeSolution.style.backgroundColor = metals[cathode].solution;
+      
+      // Calculate voltage
+      const voltage = calculateVoltage(anode, cathode);
+      
+      // Display reactions
+      anodeReaction.textContent = `Anode (Oxidation): ${reactions[anode]}`;
+      cathodeReaction.textContent = `Cathode (Reduction): ${reactions[cathode]}`;
+      overallReaction.textContent = `Overall: ${getOverallReaction(anode, cathode)}`;
+      
+      // Update voltage display
+      cellVoltage.textContent = Math.abs(voltage).toFixed(2);
+      voltmeter.textContent = Math.abs(voltage).toFixed(2) + " V";
+      
+      // Draw initial voltage chart
+      drawVoltageChart([]);
+      
+      resetSimulation();
+    }
+    
+    function calculateVoltage(anode, cathode) {
+      return metals[cathode].potential - metals[anode].potential;
+    }
+    
+    function getOverallReaction(anode, cathode) {
+      return `${anode}(s) + ${cathode}²⁺(aq) → ${anode}²⁺(aq) + ${cathode}(s)`;
+    }
+    
+    function startReaction() {
+      if (running) return;
+      
+      running = true;
+      startTime = Date.now();
+      voltageData = [];
+      
+      // Clear previous animations
+      clearAnimations();
+      
+      // Start animations
+      animateElectrons();
+      animateIons();
+      updateVoltageOverTime();
+    }
+    
+    function resetSimulation() {
+      running = false;
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+        animationId = null;
+      }
+      
+      clearAnimations();
+      voltageData = [];
+      drawVoltageChart([]);
+      startTime = 0;
+      
+      // Reset voltage
+      const anode = anodeSelect.value;
+      const cathode = cathodeSelect.value;
+      const voltage = calculateVoltage(anode, cathode);
+      cellVoltage.textContent = Math.abs(voltage).toFixed(2);
+      voltmeter.textContent = Math.abs(voltage).toFixed(2) + " V";
+    }
+    
+    function clearAnimations() {
+      // Remove all existing ions and electrons
+      ions.forEach(ion => {
+        if (ion.element && ion.element.parentNode) {
+          ion.element.parentNode.removeChild(ion.element);
+        }
+      });
+      
+      electrons.forEach(electron => {
+        if (electron.element && electron.element.parentNode) {
+          electron.element.parentNode.removeChild(electron.element);
+        }
+      });
+      
+      ions = [];
+      electrons = [];
+    }
+    
+    function animateIons() {
+      if (!running) return;
+      
+      // Create anode ion (metal going into solution)
+      if (Math.random() < 0.02) {
+        const anodeCell = document.getElementById('anode-cell');
+        const ion = document.createElement('div');
+        ion.className = 'ion';
+        ion.textContent = anodeSelect.value + '²⁺';
+        ion.style.color = 'red';
+        ion.style.left = '40px';
+        ion.style.top = '80px';
+        ion.style.opacity = '0';
+        anodeCell.appendChild(ion);
+        
+        const newIon = {
+          element: ion,
+          x: 40,
+          y: 80,
+          dx: 0.5 + Math.random() * 0.5,
+          dy: 0.5 + Math.random() * 0.5,
+          opacity: 0
+        };
+        
+        ions.push(newIon);
+      }
+      
+      // Create cathode ion (metal depositing from solution)
+      if (Math.random() < 0.02) {
+        const cathodeCell = document.getElementById('cathode-cell');
+        const ion = document.createElement('div');
+        ion.className = 'ion';
+        ion.textContent = cathodeSelect.value + '²⁺';
+        ion.style.color = 'blue';
+        ion.style.left = '40px';
+        ion.style.top = '120px';
+        ion.style.opacity = '0';
+        cathodeCell.appendChild(ion);
+        
+        const newIon = {
+          element: ion,
+          x: 40,
+          y: 120,
+          dx: -0.5 - Math.random() * 0.5,
+          dy: -0.5 - Math.random() * 0.5,
+          opacity: 1
+        };
+        
+        ions.push(newIon);
+      }
+      
+      // Update ion positions
+      ions.forEach((ion, index) => {
+        ion.x += ion.dx;
+        ion.y += ion.dy;
+        
+        if (ion.element) {
+          ion.element.style.left = `${ion.x}px`;
+          ion.element.style.top = `${ion.y}px`;
+          
+          if (ion.opacity < 1 && ion.element.style.color === 'red') {
+            ion.opacity += 0.01;
+            ion.element.style.opacity = ion.opacity;
+          } else if (ion.opacity > 0 && ion.element.style.color === 'blue') {
+            ion.opacity -= 0.01;
+            ion.element.style.opacity = ion.opacity;
+          }
+          
+          // Remove ions that move out of view
+          if (ion.y > 200 || ion.y < 0 || ion.x < 0 || ion.x > 150 || ion.opacity <= 0) {
+            if (ion.element.parentNode) {
+              ion.element.parentNode.removeChild(ion.element);
+            }
+            ions.splice(index, 1);
+          }
+        }
+      });
+      
+      animationId = requestAnimationFrame(animateIons);
+    }
+    
+    function animateElectrons() {
+      if (!running) return;
+      
+      // Create electrons at anode
+      if (Math.random() < 0.05) {
+        const cell = document.querySelector('.cell');
+        const electron = document.createElement('div');
+        electron.className = 'electron';
+        electron.style.left = '20%';
+        electron.style.top = '50px';
+        electron.style.opacity = '1';
+        cell.appendChild(electron);
+        
+        electrons.push({
+          element: electron,
+          x: cell.offsetWidth * 0.2,
+          y: 50,
+          speed: 2 + Math.random()
+        });
+      }
+      
+      // Update electron positions
+      electrons.forEach((electron, index) => {
+        electron.x += electron.speed;
+        
+        if (electron.element) {
+          electron.element.style.left = `${electron.x}px`;
+          
+          // Remove electrons that reach the cathode
+          if (electron.x > document.querySelector('.cell').offsetWidth * 0.8) {
+            if (electron.element.parentNode) {
+              electron.element.parentNode.removeChild(electron.element);
+            }
+            electrons.splice(index, 1);
+          }
+        }
+      });
+      
+      requestAnimationFrame(animateElectrons);
+    }
+    
+    function updateVoltageOverTime() {
+      if (!running) return;
+      
+      const elapsedTime = (Date.now() - startTime) / 1000; // in seconds
+      const anode = anodeSelect.value;
+      const cathode = cathodeSelect.value;
+      const initialVoltage = Math.abs(calculateVoltage(anode, cathode));
+      
+      // Simulate voltage decay over time (based on Nernst equation simplified)
+      let currentVoltage;
+      if (elapsedTime < 60) { // Simulate for 60 seconds
+        currentVoltage = initialVoltage * Math.exp(-elapsedTime / 120);
+      } else {
+        currentVoltage = initialVoltage * 0.6; // Stabilize at 60% of initial voltage
+      }
+      
+      // Update displays
+      cellVoltage.textContent = currentVoltage.toFixed(2);
+      voltmeter.textContent = currentVoltage.toFixed(2) + " V";
+      
+      // Add data point
+      voltageData.push({ time: elapsedTime, voltage: currentVoltage });
+      
+      // Update chart
+      drawVoltageChart(voltageData);
+      
+      // Continue updating
+      setTimeout(updateVoltageOverTime, 1000);
+    }
+    
+    function drawVoltageChart(data) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw axes
+      ctx.beginPath();
+      ctx.moveTo(50, 10);
+      ctx.lineTo(50, 130);
+      ctx.lineTo(750, 130);
+      ctx.strokeStyle = '#333';
+      ctx.stroke();
+      
+      // Label axes
+      ctx.fillStyle = '#333';
+      ctx.font = '12px Arial';
+      ctx.fillText('Voltage (V)', 10, 70);
+      ctx.fillText('Time (s)', 400, 145);
+      
+      // Draw grid lines
+      ctx.beginPath();
+      ctx.strokeStyle = '#ddd';
+      for (let i = 1; i <= 5; i++) {
+        ctx.moveTo(50, 130 - i * 20);
+        ctx.lineTo(750, 130 - i * 20);
+      }
+      for (let i = 1; i <= 7; i++) {
+        ctx.moveTo(50 + i * 100, 10);
+        ctx.lineTo(50 + i * 100, 130);
+      }
+      ctx.stroke();
+      
+      // Draw data points
+      if (data.length > 0) {
+        ctx.beginPath();
+        ctx.moveTo(50, 130 - data[0].voltage * 80);
+        
+        data.forEach((point, index) => {
+          // Scale x to fit time (assuming max 60 seconds)
+          const x = 50 + (point.time / 60) * 700;
+          // Scale y (assuming max voltage is 2.5V)
+          const y = 130 - (point.voltage / 2.5) * 100;
+          
+          ctx.lineTo(x, y);
+        });
+        
+        ctx.strokeStyle = '#4CAF50';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+    }
+  </script>
+</body>
+</html>
